@@ -2,13 +2,13 @@
 
 namespace skh6075\weatherplus\entity;
 
-use pocketmine\entity\Animal;
+use pocketmine\entity\Entity;
 use pocketmine\entity\EntitySizeInfo;
 use pocketmine\network\mcpe\protocol\PlaySoundPacket;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\Server;
 
-final class LightningBolt extends Animal{
+final class LightningBolt extends Entity{
 
     protected function getInitialSizeInfo(): EntitySizeInfo{
         return new EntitySizeInfo(1.8, 0.3);
