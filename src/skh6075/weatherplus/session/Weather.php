@@ -2,7 +2,6 @@
 
 namespace skh6075\weatherplus\session;
 
-use pocketmine\block\VanillaBlocks;
 use pocketmine\entity\EntityDataHelper;
 use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\protocol\LevelEventPacket;
@@ -70,32 +69,18 @@ final class Weather{
 
         if ($this->weatherId >= WeatherIds::RAINY_THUNDER and is_int($this->duration / 200)) { // RAINY_THUNDER and THUNDER and more...
             $players = $this->world->getPlayers();
-            if (count($players) <= 0) {
-                return;
+            if (count($players) > 0) {
+                $player = $players[array_rand($players)];
+                $xOffset = $player->getPosition()->getX() + mt_rand(-64, 64);
+                $zOffset = $player->getPosition()->getZ() + mt_rand(-64, 64);
+                $highY = $this->world->getHighestBlockAt((int) $xOffset, (int) $zOffset);
+
+                $nbt = EntityDataHelper::createBaseNBT($spawnVec = new Vector3($xOffset, $highY, $zOffset));
+                $entity = new LightningBolt(EntityDataHelper::parseLocation($nbt, $this->world), $nbt);
+                $entity->spawnToAll();
             }
-
-            $player = $players[array_rand($players)];
-            $xOffset = $player->getPosition()->getX() + mt_rand(-64, 64);
-            $zOffset = $player->getPosition()->getZ() + mt_rand(-64, 64);
-            $highY = $this->world->getHighestBlockAt((int) $xOffset, (int) $zOffset);
-
-            $nbt = EntityDataHelper::createBaseNBT($spawnVec = new Vector3($xOffset, $highY, $zOffset));
-            $entity = new LightningBolt(EntityDataHelper::parseLocation($nbt, $this->world), $nbt);
-            $entity->spawnToAll();
-
-            if (mt_rand(1, 100) > 25) {
-                return;
-            }
-
-            for ($x = -1; $x < 1; $x ++)
-                for ($z = -1; $z < 1; $z ++) {
-                    $_x = $spawnVec->getX() + $x;
-                    $_z = $spawnVec->getZ() + $z;
-                    $_y = $this->world->getHighestBlockAt((int)$_x, (int)$_z) + 1;
-                    $this->world->setBlockAt($_x, $_y, $_z, VanillaBlocks::FIRE(), true);
-                }
         }
-
+        
         $this->lastUpdate = $currentTick;
     }
 }
