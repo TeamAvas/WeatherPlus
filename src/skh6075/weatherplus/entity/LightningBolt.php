@@ -4,9 +4,10 @@ namespace skh6075\weatherplus\entity;
 
 use pocketmine\entity\Entity;
 use pocketmine\entity\EntitySizeInfo;
-use pocketmine\network\mcpe\protocol\PlaySoundPacket;
+use pocketmine\event\entity\ExplosionPrimeEvent;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
-use pocketmine\Server;
+use pocketmine\world\Explosion;
+use pocketmine\world\sound\ExplodeSound;
 
 final class LightningBolt extends Entity{
 
@@ -23,17 +24,19 @@ final class LightningBolt extends Entity{
     }
 
     public function onUpdate(int $currentTick): bool{
-        $this->sendSoundPacket();
+        $ev = new ExplosionPrimeEvent($this, 2.3);
+        $ev->call();
+        if (!$ev->isCancelled()) {
+            $explosion = new Explosion($this->getPosition(), $ev->getForce());
+            if ($ev->isBlockBreaking()) {
+                $explosion->explodeA();
+            }
+
+            $explosion->explodeB();
+
+            $this->broadcastSound(new ExplodeSound());
+        }
+
         return parent::onUpdate($currentTick);
-    }
-
-    private function sendSoundPacket(): void{
-        $pk = new PlaySoundPacket();
-        $pk->soundName = "ambient.weather.lightning.impact";
-        [$pk->x, $pk->y, $pk->z] = [$this->getPosition()->getX(), $this->getPosition()->getY(), $this->getPosition()->getZ()];
-        $pk->volume = 500;
-        $pk->pitch = 1;
-
-        Server::getInstance()->broadcastPackets($this->getWorld()->getPlayers(), [$pk]);
     }
 }
