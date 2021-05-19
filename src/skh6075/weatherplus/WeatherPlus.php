@@ -11,9 +11,15 @@ use pocketmine\utils\SingletonTrait;
 use pocketmine\world\World;
 use skh6075\weatherplus\command\WeatherCommand;
 use skh6075\weatherplus\entity\LightningBolt;
+use skh6075\weatherplus\weather\Weather;
+use skh6075\weatherplus\weather\WeatherIds;
+use skh6075\weatherplus\weather\WeatherUpdatedTask;
 
 final class WeatherPlus extends PluginBase{
     use SingletonTrait;
+
+    /** @var Weather[] */
+    private static array $weathers = [];
 
     protected function onLoad(): void{
         self::setInstance($this);
@@ -24,6 +30,31 @@ final class WeatherPlus extends PluginBase{
     }
 
     protected function onEnable(): void{
+        foreach ($this->getServer()->getWorldManager()->getWorlds() as $world) {
+            self::$weathers[$world->getId()] = new Weather($world);
+        }
+
         $this->getServer()->getCommandMap()->register(strtolower($this->getName()), new WeatherCommand($this));
+        $this->getScheduler()->scheduleRepeatingTask(new WeatherUpdatedTask($this), 20);
+    }
+
+    public function getWeatherByWorld(World $world): ?Weather{
+        return self::$weathers[$world->getId()] ?? null;
+    }
+
+    public function registerWorld(World $world): void{
+        self::$weathers[$world->getId()] = new Weather($world);
+    }
+
+    public function unregisterWorld(World $world): void{
+        if (isset(self::$weathers[$world->getId()])) {
+            $weather = $this->getWeatherByWorld($world);
+            $weather->setWeather(WeatherIds::SUNNY, 12000);
+            unset(self::$weathers[$world->getId()]);
+        }
+    }
+
+    public function getWeathers(): array{
+        return self::$weathers;
     }
 }
